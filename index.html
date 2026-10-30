@@ -1,0 +1,1531 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- 添加到 iPhone 主屏幕后以独立 App 形式打开 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="每日打卡" />
+    <link rel="icon" href="data:," />
+    <title>每日打卡</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f4f6f4;
+        --surface: #ffffff;
+        --surface-2: #ecefec;
+        --ink: #17211a;
+        --ink-2: #5c6a60;
+        --ink-3: #93a298;
+        --line: #dde3dd;
+        --accent: #177245;
+        --accent-ink: #ffffff;
+        --accent-soft: #e2f1e7;
+        --danger: #b3372a;
+        --danger-ink: #ffffff;
+        --danger-soft: #f9e9e6;
+        --dot-empty: #d5dcd5;
+        --shadow: 0 1px 2px rgba(23, 33, 26, 0.05), 0 6px 18px rgba(23, 33, 26, 0.05);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101511;
+          --surface: #1a201b;
+          --surface-2: #232a24;
+          --ink: #eef3ee;
+          --ink-2: #a7b5a9;
+          --ink-3: #6d7d70;
+          --line: #2c352d;
+          --accent: #3cb371;
+          --accent-ink: #0c1a10;
+          --accent-soft: #1d2f23;
+          --danger: #e0655a;
+          --danger-ink: #1c0d0b;
+          --danger-soft: #33201d;
+          --dot-empty: #333d34;
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.3);
+        }
+      }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.45;
+        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      }
+      .wrap {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 20px 16px 32px;
+      }
+
+      /* ---------- 顶部：日期 + 今日进度 ---------- */
+      header { margin-bottom: 18px; }
+      .date-line {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .date-big { font-size: 26px; font-weight: 700; letter-spacing: 0.01em; }
+      .date-week { font-size: 15px; color: var(--ink-2); font-weight: 500; }
+      .progress-row {
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .progress-track {
+        flex: 1;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: var(--accent);
+        transition: width 0.35s ease;
+      }
+      .progress-text { font-size: 14px; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+      .progress-text b { color: var(--ink); font-size: 16px; }
+      .all-done {
+        margin-top: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--accent);
+        display: none;
+      }
+      .all-done.show { display: block; }
+
+      /* ---------- 180 天挑战卡 ---------- */
+      .challenge {
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 18px 16px 16px;
+        margin-bottom: 14px;
+      }
+      .ch-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .ch-title { font-size: 15px; font-weight: 700; }
+      .ch-dates { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+      .ch-dayrow {
+        margin-top: 10px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .ch-day { font-size: 34px; font-weight: 800; line-height: 1.1; letter-spacing: 0.01em; }
+      .ch-day small { font-size: 16px; font-weight: 600; color: var(--ink-2); }
+      .ch-left { font-size: 14px; color: var(--ink-2); font-weight: 600; }
+      .ch-left b { color: var(--ink); }
+      .ch-track {
+        margin-top: 12px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        overflow: hidden;
+      }
+      .ch-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: var(--accent);
+        transition: width 0.35s ease;
+      }
+      .ch-stats {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      .ch-stat {
+        background: var(--surface-2);
+        border-radius: 12px;
+        padding: 9px 4px 7px;
+        text-align: center;
+      }
+      .ch-stat b { display: block; font-size: 19px; line-height: 1.15; }
+      .ch-stat span { display: block; margin-top: 2px; font-size: 11.5px; color: var(--ink-2); font-weight: 600; }
+      .why-box {
+        margin-top: 14px;
+        background: var(--accent-soft);
+        border-radius: 12px;
+        padding: 12px 14px;
+      }
+      .why-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .why-title { font-size: 13px; font-weight: 700; color: var(--accent); }
+      .why-edit {
+        border: 0;
+        background: transparent;
+        color: var(--accent);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 2px 4px;
+      }
+      .why-text { margin-top: 6px; font-size: 14.5px; line-height: 1.6; }
+      .why-area {
+        display: none;
+        width: 100%;
+        margin-top: 8px;
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--ink);
+        font: inherit;
+        font-size: 14.5px;
+        line-height: 1.6;
+        padding: 10px 12px;
+        min-height: 96px;
+        resize: vertical;
+      }
+      .why-area.show { display: block; }
+      .why-save {
+        display: none;
+        margin-top: 8px;
+        border: 0;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 9px 18px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .why-save.show { display: inline-block; }
+
+      /* ---------- SOS 按钮 ---------- */
+      .sos-btn {
+        margin-top: 14px;
+        width: 100%;
+        border: 0;
+        border-radius: 14px;
+        background: var(--danger);
+        color: var(--danger-ink);
+        font: inherit;
+        padding: 15px 16px 13px;
+        cursor: pointer;
+        text-align: center;
+        transition: transform 0.08s ease;
+      }
+      .sos-btn:active { transform: scale(0.985); }
+      .sos-btn .sos-main { display: block; font-size: 20px; font-weight: 800; letter-spacing: 0.02em; }
+      .sos-btn .sos-sub { display: block; margin-top: 3px; font-size: 13px; opacity: 0.88; font-weight: 600; }
+      .sos-note { margin-top: 8px; text-align: center; font-size: 12.5px; color: var(--ink-2); }
+      .overcome-flash {
+        display: none;
+        margin-top: 12px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 700;
+        text-align: center;
+      }
+      .overcome-flash.show { display: block; }
+
+      /* ---------- 止损模式 ---------- */
+      .stoploss {
+        display: none;
+        background: var(--surface);
+        border: 1.5px solid var(--danger);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+      .stoploss.show { display: block; }
+      .sl-title { font-size: 17px; font-weight: 800; color: var(--danger); }
+      .sl-sub { margin-top: 4px; font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+      .sl-list { margin-top: 12px; display: grid; gap: 8px; }
+      .sl-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        color: inherit;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 12px;
+        padding: 11px 12px;
+        cursor: pointer;
+      }
+      .sl-item .sl-dot {
+        flex: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid var(--line);
+        display: grid;
+        place-items: center;
+        color: transparent;
+      }
+      .sl-item .sl-dot svg { width: 13px; height: 13px; display: block; }
+      .sl-item.done { border-color: var(--accent); color: var(--ink-2); }
+      .sl-item.done .sl-label { text-decoration: line-through; }
+      .sl-item.done .sl-dot { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .sl-review-title { margin-top: 16px; font-size: 14px; font-weight: 700; }
+      .sl-input {
+        width: 100%;
+        margin-top: 8px;
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--ink);
+        font: inherit;
+        font-size: 15px;
+        padding: 10px 12px;
+      }
+      .sl-save {
+        margin-top: 12px;
+        border: 0;
+        background: var(--danger);
+        color: var(--danger-ink);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 11px 20px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .sl-done-msg { display: none; margin-top: 12px; font-size: 14px; font-weight: 700; color: var(--accent); }
+      .sl-done-msg.show { display: block; }
+
+      /* ---------- 提醒状态 ---------- */
+      .reminder {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
+      .reminder .bell {
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+      }
+      .reminder .bell svg { width: 20px; height: 20px; display: block; }
+      .reminder .r-body { flex: 1; min-width: 0; }
+      .reminder .r-title { font-size: 15px; font-weight: 700; line-height: 1.25; }
+      .reminder .r-sub { margin-top: 2px; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+      .reminder .badge {
+        flex: none;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 5px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      /* ---------- 补打卡提示条 ---------- */
+      .backfill {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: var(--accent-soft);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .backfill.show { display: flex; }
+      .backfill button {
+        border: 0;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      /* ---------- 打卡卡片 ---------- */
+      .habits { display: grid; gap: 12px; }
+      .habit {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        text-align: left;
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+        cursor: pointer;
+        font: inherit;
+        color: inherit;
+        transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+      }
+      .habit:active { transform: scale(0.985); }
+      .habit .icon {
+        flex: none;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--surface-2);
+        display: grid;
+        place-items: center;
+        color: var(--ink-2);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .habit .icon svg { width: 26px; height: 26px; display: block; }
+      .habit .body { flex: 1; min-width: 0; }
+      .habit .name { font-size: 19px; font-weight: 700; }
+      .habit .stats { margin-top: 3px; font-size: 13px; color: var(--ink-2); }
+      .habit .stats b { color: var(--ink); font-weight: 700; }
+      .habit .check {
+        flex: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 2px solid var(--line);
+        display: grid;
+        place-items: center;
+        color: transparent;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      }
+      .habit .check svg { width: 20px; height: 20px; display: block; }
+      .habit.done { border-color: var(--accent); }
+      .habit.done .icon { background: var(--accent); color: var(--accent-ink); }
+      .habit.done .check { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+      /* 戒色卡（锁定版，不是普通开关） */
+      .habit-card { cursor: default; }
+      .habit-card:active { transform: none; }
+      .habit-card.broken { border-color: var(--danger); }
+      .habit-card.broken .icon { background: var(--danger-soft); color: var(--danger); }
+      .habit-card .lock-note { margin-top: 4px; font-size: 12.5px; color: var(--ink-2); line-height: 1.4; }
+      .kept-btn {
+        flex: none;
+        border: 0;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font: inherit;
+        font-size: 14.5px;
+        font-weight: 700;
+        padding: 11px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .kept-btn:active { transform: scale(0.97); }
+      .state-tag {
+        flex: none;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 12px;
+        border-radius: 999px;
+        white-space: nowrap;
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .state-tag.bad { background: var(--danger-soft); color: var(--danger); }
+      .state-tag.none { background: var(--surface-2); color: var(--ink-2); }
+
+      /* ---------- 日历 ---------- */
+      .cal-card {
+        margin-top: 20px;
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+      }
+      .cal-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+      .cal-sub { font-size: 12.5px; color: var(--ink-2); margin-bottom: 12px; }
+      .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+      .cal-head {
+        text-align: center;
+        font-size: 12px;
+        color: var(--ink-3);
+        font-weight: 600;
+        padding: 2px 0 6px;
+      }
+      .cal-day {
+        border: 0;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        border-radius: 10px;
+        padding: 6px 0 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+      }
+      .cal-day .num { font-size: 14px; font-weight: 600; line-height: 1; }
+      .cal-day .dots { display: flex; gap: 3px; height: 5px; }
+      .cal-day .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dot-empty); }
+      .cal-day .dot.on { background: var(--accent); }
+      .cal-day .dot.bad { background: var(--danger); }
+      .cal-day.future { opacity: 0.35; cursor: default; }
+      .cal-day.other-month .num { color: var(--ink-3); }
+      .cal-day.today .num {
+        background: var(--ink);
+        color: var(--bg);
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        display: grid;
+        place-items: center;
+        margin: -3px 0;
+      }
+      .cal-day.selected { background: var(--accent-soft); outline: 1.5px solid var(--accent); }
+
+      /* ---------- 添加到主屏幕提示 ---------- */
+      .hint {
+        display: none;
+        margin-top: 20px;
+        background: var(--surface);
+        border: 1.5px dashed var(--line);
+        border-radius: 16px;
+        padding: 14px 16px;
+        font-size: 14px;
+        color: var(--ink-2);
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .hint.show { display: flex; }
+      .hint p { margin: 0; flex: 1; }
+      .hint p b { color: var(--ink); }
+      .hint button {
+        border: 0;
+        background: transparent;
+        color: var(--ink-3);
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0 2px;
+      }
+
+      .foot {
+        margin-top: 18px;
+        text-align: center;
+        font-size: 12.5px;
+        color: var(--ink-3);
+      }
+
+      /* ---------- SOS 全屏锁 ---------- */
+      .sos-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: var(--bg);
+        overflow-y: auto;
+        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      }
+      .sos-overlay.show { display: block; }
+      .sos-inner {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 28px 20px 40px;
+      }
+      .sos-kicker { font-size: 13px; font-weight: 700; color: var(--danger); letter-spacing: 0.06em; }
+      .sos-timer {
+        margin-top: 10px;
+        font-size: 68px;
+        font-weight: 800;
+        line-height: 1.05;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.01em;
+      }
+      .sos-round { margin-top: 4px; font-size: 14px; color: var(--ink-2); font-weight: 600; }
+      .sos-steps { margin-top: 20px; display: grid; gap: 8px; }
+      .sos-step {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 14.5px;
+        font-weight: 600;
+        color: var(--ink-3);
+        background: var(--surface);
+      }
+      .sos-step .n {
+        flex: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid var(--line);
+        display: grid;
+        place-items: center;
+        font-size: 12.5px;
+        font-weight: 800;
+      }
+      .sos-step.active { color: var(--ink); border-color: var(--danger); }
+      .sos-step.active .n { background: var(--danger); border-color: var(--danger); color: var(--danger-ink); }
+      .sos-step.passed { color: var(--ink-2); }
+      .sos-step.passed .n { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .sos-stage {
+        margin-top: 18px;
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 18px 16px;
+      }
+      .sos-stage-name { font-size: 19px; font-weight: 800; }
+      .sos-stage-text { margin-top: 8px; font-size: 16px; line-height: 1.65; }
+      .sos-why {
+        margin-top: 14px;
+        background: var(--accent-soft);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14.5px;
+        line-height: 1.6;
+      }
+      .sos-why .t { display: block; font-size: 12.5px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+      .trigger-title { margin-top: 16px; font-size: 14px; font-weight: 700; }
+      .trigger-row { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+      .trigger-chip {
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        color: inherit;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .trigger-chip.sel { background: var(--danger); border-color: var(--danger); color: var(--danger-ink); }
+      .sos-escape { margin-top: 18px; font-size: 13px; color: var(--ink-2); line-height: 1.55; text-align: center; }
+      .sos-h { font-size: 26px; font-weight: 800; line-height: 1.3; margin-top: 8px; }
+      .sos-p { margin-top: 10px; font-size: 15.5px; line-height: 1.65; color: var(--ink-2); }
+      .sos-actions { margin-top: 22px; display: grid; gap: 10px; }
+      .sos-big-btn {
+        border: 0;
+        border-radius: 14px;
+        font: inherit;
+        font-size: 17px;
+        font-weight: 800;
+        padding: 16px;
+        cursor: pointer;
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .sos-big-btn:active { transform: scale(0.985); }
+      .sos-ghost-btn {
+        border: 1.5px solid var(--line);
+        border-radius: 14px;
+        font: inherit;
+        font-size: 15.5px;
+        font-weight: 700;
+        padding: 14px 16px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--ink);
+      }
+      .sos-danger-btn {
+        border: 0;
+        border-radius: 14px;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 800;
+        padding: 15px 16px;
+        cursor: pointer;
+        background: var(--danger);
+        color: var(--danger-ink);
+      }
+      .sos-danger-btn:disabled, .sos-big-btn:disabled { opacity: 0.4; cursor: default; }
+      .break-streak {
+        margin-top: 16px;
+        text-align: center;
+        background: var(--surface);
+        border: 1.5px solid var(--line);
+        border-radius: 16px;
+        padding: 18px 16px;
+      }
+      .break-streak b { display: block; font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--danger); font-variant-numeric: tabular-nums; }
+      .break-streak span { font-size: 14px; color: var(--ink-2); font-weight: 600; }
+      .break-input {
+        width: 100%;
+        margin-top: 14px;
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--ink);
+        font: inherit;
+        font-size: 16px;
+        padding: 13px 14px;
+      }
+      .break-target { margin-top: 12px; font-size: 14.5px; color: var(--ink-2); line-height: 1.6; }
+      .break-target b { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="date-line">
+          <div class="date-big" id="dateBig">—</div>
+          <div class="date-week" id="dateWeek">—</div>
+        </div>
+        <div class="progress-row">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-text">今日 <b id="progressText">0 / 4</b></div>
+        </div>
+        <div class="all-done" id="allDone">今天四项全部完成 ✓</div>
+      </header>
+
+      <!-- 180 天挑战 -->
+      <section class="challenge" aria-label="180 天挑战">
+        <div class="ch-top">
+          <span class="ch-title">180 天挑战 · 戒色</span>
+          <span class="ch-dates">2026.10.30 → 2027.4.27</span>
+        </div>
+        <div class="ch-dayrow">
+          <span class="ch-day" id="chDay">—</span>
+          <span class="ch-left" id="chLeft">—</span>
+        </div>
+        <div class="ch-track"><div class="ch-fill" id="chFill"></div></div>
+        <div class="ch-stats">
+          <div class="ch-stat"><b id="stStreak">0</b><span>当前连胜</span></div>
+          <div class="ch-stat"><b id="stKept">0</b><span>守住天数</span></div>
+          <div class="ch-stat"><b id="stOvercome">0</b><span>熬过冲动</span></div>
+          <div class="ch-stat"><b id="stBreaks">0</b><span>破戒次数</span></div>
+        </div>
+        <div class="why-box">
+          <div class="why-head">
+            <span class="why-title">为什么要坚持</span>
+            <button type="button" class="why-edit" id="whyEditBtn">编辑</button>
+          </div>
+          <div class="why-text" id="whyText"></div>
+          <textarea class="why-area" id="whyArea" aria-label="为什么要坚持"></textarea>
+          <button type="button" class="why-save" id="whySaveBtn">保存</button>
+        </div>
+        <button type="button" class="sos-btn" id="sosOpenBtn">
+          <span class="sos-main">SOS 急救锁</span>
+          <span class="sos-sub">有冲动先按这里 · 全屏锁 20 分钟，走完流程再说</span>
+        </button>
+        <div class="sos-note">承诺只有一条：想破戒时不许直接破，先按 SOS。</div>
+        <div class="overcome-flash" id="overcomeFlash">熬过去了，已记一次「熬过冲动」。</div>
+      </section>
+
+      <!-- 止损模式 -->
+      <section class="stoploss" id="stoploss">
+        <div class="sl-title">止损模式 · 先止损，不许有第二次</div>
+        <div class="sl-sub">连胜清零，但 180 天总账还在，明天重新攒。先把下面四件做完，再写 3 行复盘，这事就翻篇。</div>
+        <div class="sl-list" id="slList"></div>
+        <div class="sl-review-title">复盘 3 行</div>
+        <input class="sl-input" id="slR1" type="text" placeholder="1. 这次的触发是什么？" />
+        <input class="sl-input" id="slR2" type="text" placeholder="2. 下次冲动来时，我先做哪一步？" />
+        <input class="sl-input" id="slR3" type="text" placeholder="3. 一句话给明天的自己" />
+        <button type="button" class="sl-save" id="slSaveBtn">保存复盘 · 翻篇</button>
+        <div class="sl-done-msg" id="slDoneMsg">复盘已存。明天从第 1 天重新攒连胜，180 天继续。</div>
+      </section>
+
+      <div class="reminder" role="status">
+        <span class="bell" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 14.5 18 8.5"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg></span>
+        <span class="r-body">
+          <span class="r-title" style="display:block">提醒已开：锁屏每小时 + 21:00 打卡</span>
+          <span class="r-sub" style="display:block">白天 9:00–23:00 每小时锁屏提醒 · 晚上 21:00 主提醒打卡</span>
+        </span>
+        <span class="badge">已启用</span>
+      </div>
+
+      <div class="backfill" id="backfillBar">
+        <span id="backfillText">正在补打卡</span>
+        <button type="button" id="backToToday">回到今天</button>
+      </div>
+
+      <div class="habits" id="habitList"></div>
+
+      <section class="cal-card">
+        <div class="cal-title">近五周</div>
+        <div class="cal-sub">学习 / 不吃炸的 / 运动点任意一天可以补打卡；戒色每天只能记一次、不能补、不能改</div>
+        <div class="cal-grid" id="calGrid"></div>
+      </section>
+
+      <div class="hint" id="homeHint">
+        <p>添加到主屏幕：点浏览器底部的<b>分享</b>按钮，选<b>「添加到主屏幕」</b>，以后点桌面图标就能直接打开，SOS 和打卡都在这里。</p>
+        <button type="button" id="hintClose" aria-label="关闭">×</button>
+      </div>
+
+      <div class="foot">记录保存在这台设备上</div>
+    </div>
+
+    <!-- SOS 全屏锁 -->
+    <div class="sos-overlay" id="sosOverlay" role="dialog" aria-modal="true" aria-label="SOS 急救锁">
+      <div class="sos-inner" id="sosInner"></div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        var STORE_KEY = "daily-checkin-homescreen-v1";
+        var HINT_KEY = "daily-checkin-hint-dismissed";
+        var CH_KEY = "daily-checkin-challenge-v1";
+        var SOS_KEY = "daily-checkin-sos-v1";
+
+        var CH_START = "2026-10-30";
+        var CH_DAYS = 180;
+        var DEFAULT_WHY =
+          "180 老规矩：把状态留给真实的生活。冲动只有 20 分钟，熬过去就没事；破一次，清零的是我已经坚持的每一天。";
+        var TRIGGERS = ["无聊", "压力大", "刷到擦边", "躺床玩手机"];
+
+        var ICONS = {
+          shield:
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 2.5V11c0 4.6-3 8.1-7 9.5C8 19.1 5 15.6 5 11V5.5L12 3z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>',
+          book:
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15z"/><path d="M4 18V5.5"/><path d="M20 18H6.5A2.5 2.5 0 0 0 4 20.5"/><path d="M9 7.5h7"/></svg>',
+          leaf:
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19C5 10 12 4.5 20 4.5c0 8-5.5 14.5-14.5 14.5"/><path d="M5 19c1-5 4-9 8.5-11.5"/></svg>',
+          run:
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="4.5" r="1.8"/><path d="M5 21l3.2-4.2L10 13l-1.8-2.2L10.5 8l3 .8 2.3 2"/><path d="M10 13l2.8 1.2 1 3.3"/><path d="M8.2 16.8L5.6 17.6 4 21"/></svg>',
+          check:
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>'
+        };
+
+        var HABITS = [
+          { id: "abstain", name: "戒色", icon: "shield" },
+          { id: "study", name: "学习", icon: "book" },
+          { id: "nofried", name: "不吃炸的", icon: "leaf" },
+          { id: "exercise", name: "运动", icon: "run" }
+        ];
+
+        var SL_ITEMS = [
+          "洗个澡，换身衣服",
+          "删掉刚才的触发内容，关掉那个 App",
+          "离开房间，去有人的地方待一会儿",
+          "今晚到此为止，不许有第二次"
+        ];
+
+        /* ---------- 日期工具（按设备本地日期） ---------- */
+        function pad(n) { return (n < 10 ? "0" : "") + n; }
+        function keyOf(d) {
+          return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+        }
+        function parseKey(k) {
+          var p = k.split("-");
+          return new Date(+p[0], +p[1] - 1, +p[2]);
+        }
+        function addDays(d, n) {
+          var c = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          c.setDate(c.getDate() + n);
+          return c;
+        }
+        function diffDays(aKey, bKey) {
+          return Math.round((parseKey(bKey) - parseKey(aKey)) / 86400000);
+        }
+        var WEEK = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+        /* ---------- 打卡存储（沿用原 key 与结构） ---------- */
+        var store = {};
+        try {
+          store = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {};
+        } catch (e) {
+          store = {};
+        }
+        function save() {
+          try {
+            localStorage.setItem(STORE_KEY, JSON.stringify(store));
+          } catch (e) { /* 存储不可用时仅本次会话内有效 */ }
+        }
+        function daySet(k) {
+          return Array.isArray(store[k]) ? store[k].slice() : [];
+        }
+        function isDone(k, habitId) {
+          return daySet(k).indexOf(habitId) !== -1;
+        }
+        function setDone(k, habitId, on) {
+          var set = daySet(k);
+          var idx = set.indexOf(habitId);
+          if (on && idx === -1) set.push(habitId);
+          if (!on && idx !== -1) set.splice(idx, 1);
+          if (set.length) store[k] = set;
+          else delete store[k];
+          save();
+        }
+
+        /* ---------- 挑战数据 ---------- */
+        var ch = { why: "", overcome: 0, decisions: {}, triggerLog: [], slDone: {}, reviews: {} };
+        try {
+          var rawCh = JSON.parse(localStorage.getItem(CH_KEY) || "null");
+          if (rawCh && typeof rawCh === "object") {
+            if (typeof rawCh.why === "string") ch.why = rawCh.why;
+            if (typeof rawCh.overcome === "number") ch.overcome = rawCh.overcome;
+            if (rawCh.decisions && typeof rawCh.decisions === "object") ch.decisions = rawCh.decisions;
+            if (Array.isArray(rawCh.triggerLog)) ch.triggerLog = rawCh.triggerLog;
+            if (rawCh.slDone && typeof rawCh.slDone === "object") ch.slDone = rawCh.slDone;
+            if (rawCh.reviews && typeof rawCh.reviews === "object") ch.reviews = rawCh.reviews;
+          }
+        } catch (e) { /* ignore */ }
+        function saveCh() {
+          try {
+            localStorage.setItem(CH_KEY, JSON.stringify(ch));
+          } catch (e) { /* ignore */ }
+        }
+        function whyText() { return ch.why && ch.why.trim() ? ch.why : DEFAULT_WHY; }
+
+        /* 戒色当天状态：kept / broken / null。挑战期内旧版已勾选的也算已锁定为 kept */
+        function abstainState(k) {
+          if (ch.decisions[k]) return ch.decisions[k];
+          if (k >= CH_START && isDone(k, "abstain")) return "kept";
+          return null;
+        }
+        function breakCount() {
+          var n = 0;
+          for (var k in ch.decisions) if (ch.decisions[k] === "broken") n++;
+          return n;
+        }
+        function keptCount() {
+          var n = 0;
+          var start = parseKey(CH_START);
+          for (var i = 0; i < CH_DAYS; i++) {
+            var k = keyOf(addDays(start, i));
+            if (k > keyOf(new Date())) break;
+            if (abstainState(k) === "kept") n++;
+          }
+          return n;
+        }
+        function challengeInfo() {
+          var today = keyOf(new Date());
+          var d = diffDays(CH_START, today);
+          if (d < 0) return { phase: "before", day: 0, left: CH_DAYS };
+          if (d >= CH_DAYS) return { phase: "after", day: CH_DAYS, left: 0 };
+          return { phase: "active", day: d + 1, left: CH_DAYS - (d + 1) };
+        }
+
+        /* ---------- 统计 ---------- */
+        function streak(habitId) {
+          var n = 0;
+          var d = new Date();
+          if (!isDone(keyOf(d), habitId)) d = addDays(d, -1);
+          while (isDone(keyOf(d), habitId)) {
+            n++;
+            d = addDays(d, -1);
+          }
+          return n;
+        }
+        function total(habitId) {
+          var n = 0;
+          for (var k in store) if (isDone(k, habitId)) n++;
+          return n;
+        }
+        function best(habitId) {
+          var dates = Object.keys(store)
+            .filter(function (k) { return isDone(k, habitId); })
+            .sort();
+          var bestRun = 0, run = 0, prev = null;
+          for (var i = 0; i < dates.length; i++) {
+            if (prev && keyOf(addDays(parseKey(prev), 1)) === dates[i]) run++;
+            else run = 1;
+            if (run > bestRun) bestRun = run;
+            prev = dates[i];
+          }
+          return bestRun;
+        }
+
+        /* ---------- SOS 状态 ---------- */
+        var sos = null;
+        try {
+          sos = JSON.parse(localStorage.getItem(SOS_KEY) || "null");
+          if (!sos || typeof sos !== "object" || !sos.phase) sos = null;
+        } catch (e) {
+          sos = null;
+        }
+        function saveSos() {
+          try {
+            if (sos) localStorage.setItem(SOS_KEY, JSON.stringify(sos));
+            else localStorage.removeItem(SOS_KEY);
+          } catch (e) { /* ignore */ }
+        }
+        var ROUND1_SEC = 20 * 60;
+        var ROUND2_SEC = 15 * 60;
+        var STAGES = [
+          { until: 3 * 60, name: "第 1 段 · 打断", text: "站起来，开灯，先离开你躺 / 坐的那个位置。冷水冲脸、冲手腕，把身体从刚才的状态里拽出来。" },
+          { until: 10 * 60, name: "第 2 段 · 耗体力", text: "俯卧撑 + 深蹲，一组接一组做到累。心率上来，冲动就下去——做到没力气想别的。" },
+          { until: 17 * 60, name: "第 3 段 · 离场", text: "出门快走，手机放口袋。去有人的地方：便利店、马路边都行，别一个人待在房间里。" },
+          { until: 20 * 60, name: "第 4 段 · 回神", text: "选这次的触发原因，再看一遍你写下的「为什么要坚持」。冲动是暂时的，天数是真的。" }
+        ];
+        function stageIndex(elapsed) {
+          for (var i = 0; i < STAGES.length; i++) if (elapsed < STAGES[i].until) return i;
+          return STAGES.length - 1;
+        }
+        function fmt(sec) {
+          sec = Math.max(0, Math.ceil(sec));
+          return pad(Math.floor(sec / 60)) + ":" + pad(sec % 60);
+        }
+        function esc(s) {
+          return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        /* ---------- 渲染 ---------- */
+        var todayKey = keyOf(new Date());
+        var selectedKey = todayKey;
+
+        var els = {
+          dateBig: document.getElementById("dateBig"),
+          dateWeek: document.getElementById("dateWeek"),
+          progressFill: document.getElementById("progressFill"),
+          progressText: document.getElementById("progressText"),
+          allDone: document.getElementById("allDone"),
+          backfillBar: document.getElementById("backfillBar"),
+          backfillText: document.getElementById("backfillText"),
+          habitList: document.getElementById("habitList"),
+          calGrid: document.getElementById("calGrid"),
+          homeHint: document.getElementById("homeHint"),
+          chDay: document.getElementById("chDay"),
+          chLeft: document.getElementById("chLeft"),
+          chFill: document.getElementById("chFill"),
+          stStreak: document.getElementById("stStreak"),
+          stKept: document.getElementById("stKept"),
+          stOvercome: document.getElementById("stOvercome"),
+          stBreaks: document.getElementById("stBreaks"),
+          whyText: document.getElementById("whyText"),
+          whyArea: document.getElementById("whyArea"),
+          whyEditBtn: document.getElementById("whyEditBtn"),
+          whySaveBtn: document.getElementById("whySaveBtn"),
+          overcomeFlash: document.getElementById("overcomeFlash"),
+          stoploss: document.getElementById("stoploss"),
+          slList: document.getElementById("slList"),
+          overlay: document.getElementById("sosOverlay"),
+          sosInner: document.getElementById("sosInner")
+        };
+
+        function renderHeader() {
+          var now = new Date();
+          els.dateBig.textContent = (now.getMonth() + 1) + "月" + now.getDate() + "日";
+          els.dateWeek.textContent = WEEK[now.getDay()];
+          var done = HABITS.filter(function (h) { return isDone(todayKey, h.id); }).length;
+          els.progressText.textContent = done + " / " + HABITS.length;
+          els.progressFill.style.width = (done / HABITS.length) * 100 + "%";
+          els.allDone.classList.toggle("show", done === HABITS.length);
+        }
+
+        function renderChallenge() {
+          var info = challengeInfo();
+          if (info.phase === "before") {
+            els.chDay.innerHTML = "明天开始 <small>/ 180 天</small>";
+            els.chLeft.innerHTML = "第 1 天是 10 月 30 日";
+            els.chFill.style.width = "0%";
+          } else if (info.phase === "after") {
+            els.chDay.innerHTML = "180 天 <small>已完成</small>";
+            els.chLeft.innerHTML = "挑战结束";
+            els.chFill.style.width = "100%";
+          } else {
+            els.chDay.innerHTML = "第 " + info.day + " 天 <small>/ 180 天</small>";
+            els.chLeft.innerHTML = "还剩 <b>" + info.left + " 天</b>";
+            els.chFill.style.width = (info.day / CH_DAYS) * 100 + "%";
+          }
+          els.stStreak.textContent = streak("abstain");
+          els.stKept.textContent = keptCount();
+          els.stOvercome.textContent = ch.overcome;
+          els.stBreaks.textContent = breakCount();
+          els.whyText.textContent = whyText();
+        }
+
+        function renderBackfill() {
+          var on = selectedKey !== todayKey;
+          els.backfillBar.classList.toggle("show", on);
+          if (on) {
+            var d = parseKey(selectedKey);
+            els.backfillText.textContent =
+              "正在补打卡：" + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + WEEK[d.getDay()] + "（戒色除外）";
+          }
+        }
+
+        function statsLine(h) {
+          return '连打 <b>' + streak(h.id) + " 天</b> · 累计 <b>" + total(h.id) +
+            " 天</b> · 最长连打 <b>" + best(h.id) + " 天</b>";
+        }
+
+        function renderHabits() {
+          els.habitList.innerHTML = "";
+          HABITS.forEach(function (h) {
+            if (h.id === "abstain") {
+              els.habitList.appendChild(renderAbstainCard(h));
+              return;
+            }
+            var done = isDone(selectedKey, h.id);
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "habit" + (done ? " done" : "");
+            btn.setAttribute("aria-pressed", done ? "true" : "false");
+            btn.innerHTML =
+              '<span class="icon">' + ICONS[h.icon] + "</span>" +
+              '<span class="body"><span class="name">' + h.name + "</span>" +
+              '<span class="stats" style="display:block">' + statsLine(h) + "</span></span>" +
+              '<span class="check">' + ICONS.check + "</span>";
+            btn.addEventListener("click", function () { toggle(h.id); });
+            els.habitList.appendChild(btn);
+          });
+        }
+
+        function renderAbstainCard(h) {
+          var state = abstainState(selectedKey);
+          var isToday = selectedKey === todayKey;
+          var card = document.createElement("div");
+          card.className = "habit habit-card" +
+            (state === "kept" ? " done" : "") +
+            (state === "broken" ? " broken" : "");
+          var action = "";
+          if (isToday && !state) {
+            action = '<button type="button" class="kept-btn" id="keptBtn">今天守住了</button>';
+          } else if (state === "kept") {
+            action = '<span class="state-tag">' + (isToday ? "今日已守住 · 已锁定" : "这天守住了") + "</span>";
+          } else if (state === "broken") {
+            action = '<span class="state-tag bad">已破戒 · 已记录</span>';
+          } else {
+            action = '<span class="state-tag none">未记录</span>';
+          }
+          var note = isToday && !state
+            ? "点「今天守住了」后今天锁定，不能再改。想破戒不能直接破——先按上面的 SOS。"
+            : "戒色每天只能记一次，不能改、不能补打卡。";
+          card.innerHTML =
+            '<span class="icon">' + ICONS[h.icon] + "</span>" +
+            '<span class="body"><span class="name">' + h.name + "</span>" +
+            '<span class="stats" style="display:block">' + statsLine(h) + "</span>" +
+            '<span class="lock-note" style="display:block">' + note + "</span></span>" +
+            action;
+          var keptBtn = card.querySelector("#keptBtn");
+          if (keptBtn) {
+            keptBtn.addEventListener("click", function () {
+              ch.decisions[todayKey] = "kept";
+              saveCh();
+              setDone(todayKey, "abstain", true);
+              render();
+            });
+          }
+          return card;
+        }
+
+        function renderCalendar() {
+          els.calGrid.innerHTML = "";
+          var heads = ["一", "二", "三", "四", "五", "六", "日"];
+          heads.forEach(function (t) {
+            var hd = document.createElement("div");
+            hd.className = "cal-head";
+            hd.textContent = t;
+            els.calGrid.appendChild(hd);
+          });
+          var today = new Date();
+          var mondayOffset = (today.getDay() + 6) % 7;
+          var start = addDays(today, -mondayOffset - 28);
+          for (var i = 0; i < 35; i++) {
+            var d = addDays(start, i);
+            var k = keyOf(d);
+            var future = k > todayKey;
+            var cell = document.createElement("button");
+            cell.type = "button";
+            cell.className = "cal-day" +
+              (future ? " future" : "") +
+              (d.getMonth() !== today.getMonth() ? " other-month" : "") +
+              (k === todayKey ? " today" : "") +
+              (k === selectedKey ? " selected" : "");
+            var dots = "";
+            for (var j = 0; j < HABITS.length; j++) {
+              var hid = HABITS[j].id;
+              if (hid === "abstain" && abstainState(k) === "broken") {
+                dots += '<span class="dot bad"></span>';
+              } else {
+                dots += '<span class="dot' + (isDone(k, hid) ? " on" : "") + '"></span>';
+              }
+            }
+            cell.innerHTML = '<span class="num">' + d.getDate() + '</span><span class="dots">' + dots + "</span>";
+            if (!future) {
+              (function (kk) {
+                cell.addEventListener("click", function () {
+                  selectedKey = kk;
+                  render();
+                });
+              })(k);
+            } else {
+              cell.disabled = true;
+            }
+            els.calGrid.appendChild(cell);
+          }
+        }
+
+        function renderStoploss() {
+          var brokenToday = abstainState(todayKey) === "broken";
+          els.stoploss.classList.toggle("show", brokenToday);
+          if (!brokenToday) return;
+          var doneMap = ch.slDone[todayKey] || {};
+          els.slList.innerHTML = "";
+          SL_ITEMS.forEach(function (label, idx) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "sl-item" + (doneMap[idx] ? " done" : "");
+            b.innerHTML = '<span class="sl-dot">' + ICONS.check + '</span><span class="sl-label">' + esc(label) + "</span>";
+            b.addEventListener("click", function () {
+              var m = ch.slDone[todayKey] || {};
+              if (m[idx]) delete m[idx];
+              else m[idx] = true;
+              ch.slDone[todayKey] = m;
+              saveCh();
+              renderStoploss();
+            });
+            els.slList.appendChild(b);
+          });
+          var rev = ch.reviews[todayKey];
+          var doneMsg = document.getElementById("slDoneMsg");
+          if (rev) {
+            document.getElementById("slR1").value = rev[0] || "";
+            document.getElementById("slR2").value = rev[1] || "";
+            document.getElementById("slR3").value = rev[2] || "";
+            doneMsg.classList.add("show");
+          } else {
+            doneMsg.classList.remove("show");
+          }
+        }
+
+        function render() {
+          todayKey = keyOf(new Date());
+          renderHeader();
+          renderChallenge();
+          renderBackfill();
+          renderHabits();
+          renderCalendar();
+          renderStoploss();
+        }
+
+        function toggle(habitId) {
+          if (habitId === "abstain") return; /* 戒色走锁定流程，不走普通开关 */
+          setDone(selectedKey, habitId, !isDone(selectedKey, habitId));
+          render();
+        }
+
+        document.getElementById("backToToday").addEventListener("click", function () {
+          selectedKey = keyOf(new Date());
+          render();
+        });
+
+        /* ---------- 为什么要坚持：编辑 ---------- */
+        var whyEditing = false;
+        els.whyEditBtn.addEventListener("click", function () {
+          whyEditing = !whyEditing;
+          els.whyArea.classList.toggle("show", whyEditing);
+          els.whySaveBtn.classList.toggle("show", whyEditing);
+          els.whyText.style.display = whyEditing ? "none" : "";
+          els.whyEditBtn.textContent = whyEditing ? "取消" : "编辑";
+          if (whyEditing) els.whyArea.value = whyText();
+        });
+        els.whySaveBtn.addEventListener("click", function () {
+          var v = els.whyArea.value.trim();
+          if (v) {
+            ch.why = v;
+            saveCh();
+          }
+          whyEditing = false;
+          els.whyArea.classList.remove("show");
+          els.whySaveBtn.classList.remove("show");
+          els.whyText.style.display = "";
+          els.whyEditBtn.textContent = "编辑";
+          renderChallenge();
+        });
+
+        /* ---------- 止损复盘 ---------- */
+        document.getElementById("slSaveBtn").addEventListener("click", function () {
+          ch.reviews[todayKey] = [
+            document.getElementById("slR1").value.trim(),
+            document.getElementById("slR2").value.trim(),
+            document.getElementById("slR3").value.trim()
+          ];
+          saveCh();
+          renderStoploss();
+        });
+
+        /* ---------- SOS 流程 ---------- */
+        function startSos() {
+          sos = { phase: "lock1", start: Date.now(), trigger: null, breakText: null, waitStart: 0 };
+          saveSos();
+          showSos();
+        }
+        function endSosHeld() {
+          if (sos && sos.trigger) {
+            ch.triggerLog.push({ date: todayKey, trigger: sos.trigger });
+          }
+          ch.overcome += 1;
+          saveCh();
+          sos = null;
+          saveSos();
+          els.overlay.classList.remove("show");
+          document.body.style.overflow = "";
+          render();
+          els.overcomeFlash.classList.add("show");
+          setTimeout(function () { els.overcomeFlash.classList.remove("show"); }, 6000);
+          window.scrollTo(0, 0);
+        }
+        function confirmBreak() {
+          ch.decisions[todayKey] = "broken";
+          saveCh();
+          setDone(todayKey, "abstain", false);
+          sos = null;
+          saveSos();
+          els.overlay.classList.remove("show");
+          document.body.style.overflow = "";
+          selectedKey = todayKey;
+          render();
+          window.scrollTo(0, 0);
+          setTimeout(function () {
+            els.stoploss.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 60);
+        }
+
+        function triggerChipsHtml() {
+          var html = '<div class="trigger-title">这次是什么触发的？</div><div class="trigger-row">';
+          TRIGGERS.forEach(function (t) {
+            html += '<button type="button" class="trigger-chip' +
+              (sos && sos.trigger === t ? " sel" : "") +
+              '" data-trigger="' + t + '">' + t + "</button>";
+          });
+          return html + "</div>";
+        }
+        function bindTriggerChips() {
+          var chips = els.sosInner.querySelectorAll(".trigger-chip");
+          for (var i = 0; i < chips.length; i++) {
+            chips[i].addEventListener("click", function () {
+              sos.trigger = this.getAttribute("data-trigger");
+              saveSos();
+              var all = els.sosInner.querySelectorAll(".trigger-chip");
+              for (var j = 0; j < all.length; j++) {
+                all[j].classList.toggle("sel", all[j].getAttribute("data-trigger") === sos.trigger);
+              }
+            });
+          }
+        }
+
+        function renderSosLock() {
+          var isR1 = sos.phase === "lock1";
+          var total = isR1 ? ROUND1_SEC : ROUND2_SEC;
+          var elapsed = (Date.now() - sos.start) / 1000;
+          var remain = total - elapsed;
+          var html = "";
+          if (isR1) {
+            var idx = stageIndex(elapsed);
+            html += '<div class="sos-kicker">SOS 急救锁 · 第一轮</div>';
+            html += '<div class="sos-timer" id="sosTimer">' + fmt(remain) + '</div>';
+            html += '<div class="sos-round">20 分钟走完之前，「守住了」和「破戒」都点不了</div>';
+            html += '<div class="sos-steps">';
+            STAGES.forEach(function (s, i) {
+              html += '<div class="sos-step' + (i === idx ? " active" : i < idx ? " passed" : "") +
+                '"><span class="n">' + (i + 1) + '</span><span>' + s.name.replace(/^第 \d 段 · /, "") + "</span></div>";
+            });
+            html += "</div>";
+            html += '<div class="sos-stage"><div class="sos-stage-name">' + STAGES[idx].name +
+              '</div><div class="sos-stage-text">' + STAGES[idx].text + "</div>";
+            if (idx === 3) {
+              html += triggerChipsHtml();
+              html += '<div class="sos-why"><span class="t">为什么要坚持</span>' + esc(whyText()) + "</div>";
+            }
+            html += "</div>";
+          } else {
+            html += '<div class="sos-kicker">SOS 急救锁 · 第二轮</div>';
+            html += '<div class="sos-timer" id="sosTimer">' + fmt(remain) + '</div>';
+            html += '<div class="sos-round">再锁 15 分钟，不许提前结束</div>';
+            html += '<div class="sos-stage"><div class="sos-stage-name">去洗个冷水澡</div>' +
+              '<div class="sos-stage-text">洗个冷水澡，换身衣服，回到有光、有人的地方。手机放下，别带进浴室。这 15 分钟就是用来让冲动彻底退下去的。</div></div>';
+          }
+          html += '<div class="sos-escape">锁的只是这个页面，不是你的手机。有急事直接切出去打电话、回消息，计时按开始时间继续走，回来打开还在锁。</div>';
+          els.sosInner.innerHTML = html;
+          bindTriggerChips();
+        }
+
+        function renderSosEval(round) {
+          var html = '<div class="sos-kicker">SOS 急救锁</div>';
+          html += '<div class="sos-h">' + (round === 1 ? "20 分钟到了。冲动降了吗？" : "第二轮也走完了。冲动降了吗？") + "</div>";
+          html += '<div class="sos-p">诚实评一次：身体还紧绷、还想立刻动手，就是没降，别骗自己。</div>';
+          html += '<div class="sos-actions">';
+          html += '<button type="button" class="sos-big-btn" id="sosHeldBtn">降了 · 我守住了</button>';
+          if (round === 1) {
+            html += '<button type="button" class="sos-ghost-btn" id="sosMoreBtn">没降 · 再锁 15 分钟</button>';
+          } else {
+            html += '<button type="button" class="sos-ghost-btn" id="sosBreakBtn">还是要破戒</button>';
+          }
+          html += "</div>";
+          els.sosInner.innerHTML = html;
+          document.getElementById("sosHeldBtn").addEventListener("click", endSosHeld);
+          if (round === 1) {
+            document.getElementById("sosMoreBtn").addEventListener("click", function () {
+              sos.phase = "lock2";
+              sos.start = Date.now();
+              saveSos();
+              renderSosLock();
+            });
+          } else {
+            document.getElementById("sosBreakBtn").addEventListener("click", function () {
+              var x = streak("abstain");
+              sos.breakText = "我愿意清零已经坚持的 " + x + " 天";
+              sos.breakStreak = x;
+              sos.phase = "breakType";
+              saveSos();
+              renderSosBreakType();
+            });
+          }
+        }
+
+        function renderSosBreakType() {
+          var html = '<div class="sos-kicker">破戒通道 · 第 1 步</div>';
+          html += '<div class="sos-h">真要破，先把这句话亲手打出来</div>';
+          html += '<div class="break-streak"><b>' + sos.breakStreak + ' 天</b><span>这是你已经坚持的连胜，清零就是从 0 开始</span></div>';
+          html += '<div class="break-target">照着打（不能粘贴）：<b>' + esc(sos.breakText) + "</b></div>";
+          html += '<input class="break-input" id="breakInput" type="text" autocomplete="off" placeholder="在这里手打上面那句话" />';
+          html += '<div class="sos-actions"><button type="button" class="sos-danger-btn" id="breakNextBtn" disabled>打对了才能继续</button></div>';
+          html += '<div class="sos-actions"><button type="button" class="sos-ghost-btn" id="breakGiveUpBtn">算了，我不破了</button></div>';
+          els.sosInner.innerHTML = html;
+          var input = document.getElementById("breakInput");
+          var next = document.getElementById("breakNextBtn");
+          input.addEventListener("paste", function (e) { e.preventDefault(); });
+          input.addEventListener("input", function () {
+            var ok = input.value.trim() === sos.breakText;
+            next.disabled = !ok;
+            next.textContent = ok ? "继续 · 进入 60 秒等待" : "打对了才能继续";
+          });
+          next.addEventListener("click", function () {
+            sos.phase = "breakWait";
+            sos.waitStart = Date.now();
+            saveSos();
+            renderSosBreakWait();
+          });
+          document.getElementById("breakGiveUpBtn").addEventListener("click", endSosHeld);
+        }
+
+        function renderSosBreakWait() {
+          var remain = 60 - (Date.now() - sos.waitStart) / 1000;
+          var html = '<div class="sos-kicker">破戒通道 · 第 2 步</div>';
+          html += '<div class="sos-h">盯着你的连胜，再等 60 秒</div>';
+          html += '<div class="break-streak"><b id="breakWaitNum">' + Math.max(0, Math.ceil(remain)) + '</b><span>秒后才能确认 · 你已经坚持了 ' + sos.breakStreak + " 天</span></div>";
+          html += '<div class="sos-p">这 60 秒里想清楚：破完之后那种空掉的感觉，哪一次是真的值的？</div>';
+          html += '<div class="sos-actions"><button type="button" class="sos-danger-btn" id="breakConfirmBtn" disabled>确认破戒</button></div>';
+          html += '<div class="sos-actions"><button type="button" class="sos-ghost-btn" id="breakGiveUpBtn2">算了，我不破了</button></div>';
+          els.sosInner.innerHTML = html;
+          document.getElementById("breakConfirmBtn").addEventListener("click", confirmBreak);
+          document.getElementById("breakGiveUpBtn2").addEventListener("click", endSosHeld);
+        }
+
+        function showSos() {
+          if (!sos) return;
+          els.overlay.classList.add("show");
+          document.body.style.overflow = "hidden";
+          tickSos();
+        }
+
+        function tickSos() {
+          if (!sos) return;
+          if (!els.overlay.classList.contains("show")) showSos();
+          if (sos.phase === "lock1" || sos.phase === "lock2") {
+            var total = sos.phase === "lock1" ? ROUND1_SEC : ROUND2_SEC;
+            var elapsed = (Date.now() - sos.start) / 1000;
+            if (elapsed >= total) {
+              sos.phase = sos.phase === "lock1" ? "eval1" : "eval2";
+              saveSos();
+              renderSosEval(sos.phase === "eval1" ? 1 : 2);
+              return;
+            }
+            /* 阶段切换或每秒刷新计时 */
+            var timerEl = document.getElementById("sosTimer");
+            if (!timerEl || (sos.phase === "lock1" && stageIndex(elapsed) !== tickSos._stage)) {
+              tickSos._stage = sos.phase === "lock1" ? stageIndex(elapsed) : -1;
+              renderSosLock();
+            } else {
+              timerEl.textContent = fmt(total - elapsed);
+            }
+          } else if (sos.phase === "eval1" || sos.phase === "eval2") {
+            if (!document.getElementById("sosHeldBtn")) renderSosEval(sos.phase === "eval1" ? 1 : 2);
+          } else if (sos.phase === "breakType") {
+            if (!document.getElementById("breakInput")) renderSosBreakType();
+          } else if (sos.phase === "breakWait") {
+            var remain = 60 - (Date.now() - sos.waitStart) / 1000;
+            var numEl = document.getElementById("breakWaitNum");
+            if (!numEl) {
+              renderSosBreakWait();
+              return;
+            }
+            numEl.textContent = Math.max(0, Math.ceil(remain));
+            if (remain <= 0) {
+              var btn = document.getElementById("breakConfirmBtn");
+              if (btn) btn.disabled = false;
+            }
+          }
+        }
+
+        document.getElementById("sosOpenBtn").addEventListener("click", function () {
+          if (sos) {
+            showSos();
+          } else {
+            startSos();
+          }
+        });
+
+        setInterval(function () {
+          if (sos) tickSos();
+          /* 跨天自动刷新日期与挑战天数 */
+          var nk = keyOf(new Date());
+          if (nk !== todayKey) {
+            selectedKey = nk;
+            render();
+          }
+        }, 1000);
+
+        /* ---------- 添加到主屏幕提示 ---------- */
+        var standalone =
+          (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+          window.navigator.standalone === true;
+        var hintDismissed = false;
+        try {
+          hintDismissed = localStorage.getItem(HINT_KEY) === "1";
+        } catch (e) { /* ignore */ }
+        if (!standalone && !hintDismissed) els.homeHint.classList.add("show");
+        document.getElementById("hintClose").addEventListener("click", function () {
+          els.homeHint.classList.remove("show");
+          try { localStorage.setItem(HINT_KEY, "1"); } catch (e) { /* ignore */ }
+        });
+
+        render();
+        if (sos) showSos();
+      })();
+    </script>
+  </body>
+</html>
