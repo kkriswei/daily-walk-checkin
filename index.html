@@ -712,9 +712,9 @@
         </div>
         <div class="progress-row">
           <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-          <div class="progress-text">今日 <b id="progressText">0 / 4</b></div>
+          <div class="progress-text">今日 <b id="progressText">0 / 1</b></div>
         </div>
-        <div class="all-done" id="allDone">今天四项全部完成 ✓</div>
+        <div class="all-done" id="allDone">今日已打卡 ✓</div>
       </header>
 
       <!-- 180 天挑战 -->
@@ -782,7 +782,7 @@
 
       <section class="cal-card">
         <div class="cal-title">近五周</div>
-        <div class="cal-sub">学习 / 不吃炸的 / 运动点任意一天可以补打卡；戒色每天只能记一次、不能补、不能改</div>
+        <div class="cal-sub">戒色记录总览；每天只能记一次、不能补、不能改</div>
         <div class="cal-grid" id="calGrid"></div>
       </section>
 
@@ -827,12 +827,7 @@
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>'
         };
 
-        var HABITS = [
-          { id: "abstain", name: "戒色", icon: "shield" },
-          { id: "study", name: "学习", icon: "book" },
-          { id: "nofried", name: "不吃炸的", icon: "leaf" },
-          { id: "exercise", name: "运动", icon: "run" }
-        ];
+        var HABITS = [{ id: "abstain", name: "戒色", icon: "shield" }];
 
         var SL_ITEMS = [
           "洗个澡，换身衣服",
