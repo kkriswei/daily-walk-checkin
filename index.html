@@ -884,7 +884,7 @@
         }
 
         /* ---------- 挑战数据 ---------- */
-        var ch = { why: "", overcome: 0, decisions: {}, triggerLog: [], slDone: {}, reviews: {} };
+        var ch = { why: "", overcome: 0, decisions: {}, triggerLog: [], slDone: {}, reviews: {}, backfilled: {} };
         try {
           var rawCh = JSON.parse(localStorage.getItem(CH_KEY) || "null");
           if (rawCh && typeof rawCh === "object") {
@@ -894,6 +894,7 @@
             if (Array.isArray(rawCh.triggerLog)) ch.triggerLog = rawCh.triggerLog;
             if (rawCh.slDone && typeof rawCh.slDone === "object") ch.slDone = rawCh.slDone;
             if (rawCh.reviews && typeof rawCh.reviews === "object") ch.reviews = rawCh.reviews;
+            if (rawCh.backfilled && typeof rawCh.backfilled === "object") ch.backfilled = rawCh.backfilled;
           }
         } catch (e) { /* ignore */ }
         function saveCh() {
@@ -1066,8 +1067,10 @@
           els.backfillBar.classList.toggle("show", on);
           if (on) {
             var d = parseKey(selectedKey);
+            var isYest = selectedKey === keyOf(addDays(new Date(), -1));
             els.backfillText.textContent =
-              "正在补打卡：" + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + WEEK[d.getDay()] + "（戒色除外）";
+              "正在补打卡：" + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + WEEK[d.getDay()] +
+              (isYest ? "（戒色昨天可补记）" : "（戒色除外）");
           }
         }
 
@@ -1101,6 +1104,8 @@
         function renderAbstainCard(h) {
           var state = abstainState(selectedKey);
           var isToday = selectedKey === todayKey;
+          var isYesterday = selectedKey === keyOf(addDays(new Date(), -1));
+          var canBackfill = isYesterday && !state && selectedKey >= CH_START;
           var card = document.createElement("div");
           card.className = "habit habit-card" +
             (state === "kept" ? " done" : "") +
@@ -1108,16 +1113,23 @@
           var action = "";
           if (isToday && !state) {
             action = '<button type="button" class="kept-btn" id="keptBtn">今天守住了</button>';
+          } else if (canBackfill) {
+            action = '<button type="button" class="kept-btn" id="backfillBtn">补记：这天守住了</button>';
           } else if (state === "kept") {
-            action = '<span class="state-tag">' + (isToday ? "今日已守住 · 已锁定" : "这天守住了") + "</span>";
+            action = '<span class="state-tag">' + (isToday ? "今日已守住 · 已锁定" : "这天守住了" + (ch.backfilled && ch.backfilled[selectedKey] ? " · 补记" : "")) + "</span>";
           } else if (state === "broken") {
             action = '<span class="state-tag bad">已破戒 · 已记录</span>';
           } else {
             action = '<span class="state-tag none">未记录</span>';
           }
-          var note = isToday && !state
-            ? "点「今天守住了」后今天锁定，不能再改。想破戒不能直接破——先按上面的 SOS。"
-            : "戒色每天只能记一次，不能改、不能补打卡。";
+          var note;
+          if (isToday && !state) {
+            note = "点「今天守住了」后今天锁定，不能再改。想破戒不能直接破——先按上面的 SOS。";
+          } else if (canBackfill) {
+            note = "昨天忘了确认？补记只限昨天，点下后锁定，并会标明是补记的。";
+          } else {
+            note = "戒色每天只能记一次，不能改；只有昨天可以补记，更早的天数不行。";
+          }
           card.innerHTML =
             '<span class="icon">' + ICONS[h.icon] + "</span>" +
             '<span class="body"><span class="name">' + h.name + "</span>" +
@@ -1130,6 +1142,17 @@
               ch.decisions[todayKey] = "kept";
               saveCh();
               setDone(todayKey, "abstain", true);
+              render();
+            });
+          }
+          var bfBtn = card.querySelector("#backfillBtn");
+          if (bfBtn) {
+            bfBtn.addEventListener("click", function () {
+              ch.decisions[selectedKey] = "kept";
+              if (!ch.backfilled || typeof ch.backfilled !== "object") ch.backfilled = {};
+              ch.backfilled[selectedKey] = true;
+              saveCh();
+              setDone(selectedKey, "abstain", true);
               render();
             });
           }
