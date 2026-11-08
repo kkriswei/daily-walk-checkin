@@ -11,6 +11,23 @@
     <meta name="apple-mobile-web-app-title" content="每日打卡" />
     <link rel="icon" href="data:," />
     <title>每日打卡</title>
+    <script>
+      /* 版本自检：发现不是最新版就自动跳新版，避免手机缓存卡住旧页面 */
+      (function () {
+        var BUILD = "20261108-2";
+        try {
+          fetch("version.json?t=" + Date.now(), { cache: "no-store" })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              if (j && j.v && j.v !== BUILD && sessionStorage.getItem("dwc-vcheck") !== j.v) {
+                sessionStorage.setItem("dwc-vcheck", j.v);
+                location.replace(location.pathname + "?v=" + j.v);
+              }
+            })
+            .catch(function () { /* 离线时忽略 */ });
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <style>
       :root {
         color-scheme: light dark;
