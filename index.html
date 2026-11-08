@@ -1068,9 +1068,10 @@
           if (on) {
             var d = parseKey(selectedKey);
             var isYest = selectedKey === keyOf(addDays(new Date(), -1));
+            var canSpecial = selectedKey === "2026-10-31" && !abstainState(selectedKey);
             els.backfillText.textContent =
               "正在补打卡：" + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + WEEK[d.getDay()] +
-              (isYest ? "（戒色昨天可补记）" : "（戒色除外）");
+              (isYest ? "（戒色昨天可补记）" : canSpecial ? "（戒色可补记 · 10月31日特例）" : "（戒色除外）");
           }
         }
 
@@ -1105,7 +1106,8 @@
           var state = abstainState(selectedKey);
           var isToday = selectedKey === todayKey;
           var isYesterday = selectedKey === keyOf(addDays(new Date(), -1));
-          var canBackfill = isYesterday && !state && selectedKey >= CH_START;
+          var isSpecialDay = selectedKey === "2026-10-31";
+          var canBackfill = (isYesterday || isSpecialDay) && !state && selectedKey >= CH_START;
           var card = document.createElement("div");
           card.className = "habit habit-card" +
             (state === "kept" ? " done" : "") +
@@ -1125,6 +1127,8 @@
           var note;
           if (isToday && !state) {
             note = "点「今天守住了」后今天锁定，不能再改。想破戒不能直接破——先按上面的 SOS。";
+          } else if (canBackfill && isSpecialDay && !isYesterday) {
+            note = "这天你当时守住了、只是漏了确认——特例开放一次，点下补记后锁定，并会标明是补记的。";
           } else if (canBackfill) {
             note = "昨天忘了确认？补记只限昨天，点下后锁定，并会标明是补记的。";
           } else {
