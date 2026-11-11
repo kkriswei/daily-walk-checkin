@@ -14,7 +14,7 @@
     <script>
       /* 版本自检：发现不是最新版就自动跳新版，避免手机缓存卡住旧页面 */
       (function () {
-        var BUILD = "20261111-1";
+        var BUILD = "20261111-2";
         try {
           fetch("version.json?t=" + Date.now(), { cache: "no-store" })
             .then(function (r) { return r.json(); })
@@ -753,7 +753,7 @@
       <section class="challenge" aria-label="180 天挑战">
         <div class="ch-top">
           <span class="ch-title">180 天挑战 · 戒色</span>
-          <span class="ch-dates">2026.10.30 → 2027.4.27</span>
+          <span class="ch-dates">2026.11.10 → 2027.5.8</span>
         </div>
         <div class="ch-dayrow">
           <span class="ch-day" id="chDay">—</span>
@@ -840,7 +840,7 @@
         var CH_KEY = "daily-checkin-challenge-v1";
         var SOS_KEY = "daily-checkin-sos-v1";
 
-        var CH_START = "2026-10-30";
+        var CH_START = "2026-11-10";
         var CH_DAYS = 180;
         var DEFAULT_WHY =
           "180 老规矩：把状态留给真实的生活。冲动只有 20 分钟，熬过去就没事；破一次，清零的是我已经坚持的每一天。";
@@ -933,6 +933,28 @@
           try {
             localStorage.setItem(CH_KEY, JSON.stringify(ch));
           } catch (e) { /* ignore */ }
+        }
+        /* 挑战重开（2026-11-11 Chris 本人决定）：第 1 天改为 2026-11-10，此前记录一次性清零 */
+        if (!ch.resetV2) {
+          Object.keys(ch.decisions).forEach(function (k) { if (k < CH_START) delete ch.decisions[k]; });
+          ch.triggerLog = ch.triggerLog.filter(function (e) { return !e.date || e.date >= CH_START; });
+          Object.keys(ch.slDone).forEach(function (k) { if (k < CH_START) delete ch.slDone[k]; });
+          Object.keys(ch.reviews).forEach(function (k) { if (k < CH_START) delete ch.reviews[k]; });
+          if (ch.backfilled) Object.keys(ch.backfilled).forEach(function (k) { if (k < CH_START) delete ch.backfilled[k]; });
+          Object.keys(store).forEach(function (k) {
+            if (k < CH_START) {
+              var s = daySet(k);
+              var i = s.indexOf("abstain");
+              if (i !== -1) {
+                s.splice(i, 1);
+                if (s.length) store[k] = s;
+                else delete store[k];
+              }
+            }
+          });
+          ch.resetV2 = true;
+          saveCh();
+          save();
         }
         function whyText() { return ch.why && ch.why.trim() ? ch.why : DEFAULT_WHY; }
 
@@ -1076,7 +1098,7 @@
           var info = challengeInfo();
           if (info.phase === "before") {
             els.chDay.innerHTML = "明天开始 <small>/ 180 天</small>";
-            els.chLeft.innerHTML = "第 1 天是 10 月 30 日";
+            els.chLeft.innerHTML = "第 1 天是 11 月 10 日";
             els.chFill.style.width = "0%";
           } else if (info.phase === "after") {
             els.chDay.innerHTML = "180 天 <small>已完成</small>";
