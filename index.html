@@ -14,7 +14,7 @@
     <script>
       /* 版本自检：发现不是最新版就自动跳新版，避免手机缓存卡住旧页面 */
       (function () {
-        var BUILD = "20261108-2";
+        var BUILD = "20261111-1";
         try {
           fetch("version.json?t=" + Date.now(), { cache: "no-store" })
             .then(function (r) { return r.json(); })
@@ -472,6 +472,21 @@
         white-space: nowrap;
       }
       .kept-btn:active { transform: scale(0.97); }
+      .action-stack { flex: none; display: flex; flex-direction: column; gap: 8px; }
+      .break-btn {
+        flex: none;
+        border: 1.5px solid var(--danger);
+        background: transparent;
+        color: var(--danger);
+        font: inherit;
+        font-size: 14.5px;
+        font-weight: 700;
+        padding: 10px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .break-btn:active { transform: scale(0.97); }
       .state-tag {
         flex: none;
         font-size: 13px;
@@ -799,7 +814,7 @@
 
       <section class="cal-card">
         <div class="cal-title">近五周</div>
-        <div class="cal-sub">戒色记录总览；每天只能记一次、不能改，只有昨天可以补记</div>
+        <div class="cal-sub">戒色记录总览；守住只记当天和昨天，破戒可补记、记上连胜清零</div>
         <div class="cal-grid" id="calGrid"></div>
       </section>
 
@@ -1088,7 +1103,7 @@
             var canSpecial = selectedKey === "2026-10-31" && !abstainState(selectedKey);
             els.backfillText.textContent =
               "正在补打卡：" + (d.getMonth() + 1) + "月" + d.getDate() + "日 " + WEEK[d.getDay()] +
-              (isYest ? "（戒色昨天可补记）" : canSpecial ? "（戒色可补记 · 10月31日特例）" : "（戒色除外）");
+              (isYest ? "（戒色可补记守住或破戒）" : canSpecial ? "（戒色可补记 · 10月31日特例）" : "（戒色破戒可补记）");
           }
         }
 
@@ -1125,6 +1140,7 @@
           var isYesterday = selectedKey === keyOf(addDays(new Date(), -1));
           var isSpecialDay = selectedKey === "2026-10-31";
           var canBackfill = (isYesterday || isSpecialDay) && !state && selectedKey >= CH_START;
+          var canLogBreak = !isToday && !state && selectedKey >= CH_START;
           var card = document.createElement("div");
           card.className = "habit habit-card" +
             (state === "kept" ? " done" : "") +
@@ -1132,12 +1148,14 @@
           var action = "";
           if (isToday && !state) {
             action = '<button type="button" class="kept-btn" id="keptBtn">今天守住了</button>';
-          } else if (canBackfill) {
-            action = '<button type="button" class="kept-btn" id="backfillBtn">补记：这天守住了</button>';
+          } else if (!state && (canBackfill || canLogBreak)) {
+            action = '<span class="action-stack">' +
+              (canBackfill ? '<button type="button" class="kept-btn" id="backfillBtn">补记：这天守住了</button>' : "") +
+              '<button type="button" class="break-btn" id="breakLogBtn">补记：这天破戒了</button></span>';
           } else if (state === "kept") {
             action = '<span class="state-tag">' + (isToday ? "今日已守住 · 已锁定" : "这天守住了" + (ch.backfilled && ch.backfilled[selectedKey] ? " · 补记" : "")) + "</span>";
           } else if (state === "broken") {
-            action = '<span class="state-tag bad">已破戒 · 已记录</span>';
+            action = '<span class="state-tag bad">已破戒 · 已记录' + (ch.backfilled && ch.backfilled[selectedKey] ? " · 补记" : "") + "</span>";
           } else {
             action = '<span class="state-tag none">未记录</span>';
           }
@@ -1147,9 +1165,11 @@
           } else if (canBackfill && isSpecialDay && !isYesterday) {
             note = "这天你当时守住了、只是漏了确认——特例开放一次，点下补记后锁定，并会标明是补记的。";
           } else if (canBackfill) {
-            note = "昨天忘了确认？补记只限昨天，点下后锁定，并会标明是补记的。";
+            note = "昨天没记？守住、破戒都能补记，点下后锁定，并会标明是补记的。";
+          } else if (!state && canLogBreak) {
+            note = "这天没记。破戒可以补记（记上后连胜清零），守住不能补记。";
           } else {
-            note = "戒色每天只能记一次，不能改；只有昨天可以补记，更早的天数不行。";
+            note = "戒色每天只能记一次，不能改；守住只能补记昨天，破戒可以补记。";
           }
           card.innerHTML =
             '<span class="icon">' + ICONS[h.icon] + "</span>" +
@@ -1174,6 +1194,17 @@
               ch.backfilled[selectedKey] = true;
               saveCh();
               setDone(selectedKey, "abstain", true);
+              render();
+            });
+          }
+          var brBtn = card.querySelector("#breakLogBtn");
+          if (brBtn) {
+            brBtn.addEventListener("click", function () {
+              ch.decisions[selectedKey] = "broken";
+              if (!ch.backfilled || typeof ch.backfilled !== "object") ch.backfilled = {};
+              ch.backfilled[selectedKey] = true;
+              saveCh();
+              setDone(selectedKey, "abstain", false);
               render();
             });
           }
